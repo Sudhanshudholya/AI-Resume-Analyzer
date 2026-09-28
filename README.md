@@ -1,87 +1,174 @@
-# Welcome to React Router!
+# 🤖 AI Resume Analyzer
 
-A modern, production-ready template for building full-stack React applications using React Router.
+An **AI-powered Resume Analyzer** that helps users analyze their resumes, identify strengths and weaknesses, and receive useful feedback to improve their chances of getting hired.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+The application provides an easy way to upload a resume and get AI-based insights about resume quality, skills, content, and overall job readiness.
 
-## Features
+---
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+## 🚀 Features
 
-## Getting Started
+* 📄 Upload and analyze resumes
+* 🤖 AI-powered resume analysis
+* 📊 Resume score and feedback
+* 🎯 Identify strengths and weaknesses
+* 💼 Job-specific resume analysis
+* 📝 Suggestions for resume improvement
+* 🔍 Analyze skills and resume content
+* 📱 Fully responsive design
+* ⚡ Fast and user-friendly interface
+* 🔐 Secure resume processing
 
-### Installation
+---
 
-Install the dependencies:
+## 🛠️ Tech Stack
+
+* **React.js**
+* **TypeScript**
+* **Tailwind CSS**
+* **React Router**
+* **AI Integration**
+* **Vite**
+
+---
+
+## 📸 Screenshots
+
+Add screenshots of your project here.
+
+```md
+![Home Page](./screenshots/home.png)
+![Resume Analysis](./screenshots/resume-analysis.png)
+```
+
+---
+
+## ⚙️ Installation
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/Sudhanshudholya/ai-resume-analyzer.git
+```
+
+### 2. Go to the project directory
+
+```bash
+cd AI-Resume-Analyzer
+```
+
+### 3. Install dependencies
+
+Using npm:
 
 ```bash
 npm install
 ```
 
-### Development
+Or using yarn:
 
-Start the development server with HMR:
+```bash
+yarn
+```
+
+### 4. Start the development server
 
 ```bash
 npm run dev
 ```
 
-Your application will be available at `http://localhost:5173`.
-
-## Building for Production
-
-Create a production build:
-
-```bash
-npm run build
-```
-
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
-```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
-```
-
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
+The application will run on your local development server.
 
 ---
 
-Built with ❤️ using React Router.
+## 📂 Project Structure
+
+```text
+ai-resume-analyzer/
+│
+├── app/
+├── components/
+├── constants/
+├── public/
+├── routes/
+├── types/
+├── package.json
+└── README.md
+```
+
+---
+
+## 💡 How It Works
+
+1. User uploads their resume.
+2. The application processes the resume.
+3. AI analyzes the resume content.
+4. The system evaluates different sections of the resume.
+5. A resume score and detailed feedback are generated.
+6. The user can use the suggestions to improve their resume.
+
+---
+
+## 🎯 Purpose of the Project
+
+The main purpose of this project is to help job seekers understand how effective their resume is.
+
+AI-based feedback can help users improve:
+
+* Resume structure
+* Skills presentation
+* Professional summary
+* Work experience
+* Keywords
+* Readability
+* Overall resume quality
+
+---
+
+## 🔮 Future Improvements
+
+* ATS compatibility score
+* Job description matching
+* Resume keyword suggestions
+* AI-generated resume improvements
+* Resume history
+* Multiple resume comparison
+* Downloadable analysis report
+* More detailed skill recommendations
+
+---
+
+## 🤝 Contributing
+
+Contributions, suggestions, and improvements are welcome.
+
+If you would like to contribute:
+
+1. Fork the repository
+2. Create a new branch
+3. Make your changes
+4. Commit your changes
+5. Push the branch
+6. Create a Pull Request
+
+---
+
+## 👨‍💻 Author
+
+**Sudhanshu Dholya**
+
+Full Stack / MERN Stack Developer
+
+---
+
+## ⭐ Support
+
+If you like this project, please consider giving it a **⭐ on GitHub**.
+
+It helps support the project and motivates me to build more useful applications.
+
+---
+
+## 📄 License
+
+This project is created for educational and learning purposes.
