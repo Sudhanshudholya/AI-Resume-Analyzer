@@ -1,5 +1,9 @@
 import { create } from "zustand";
 
+let isInitialized = false;
+let initInterval: ReturnType<typeof setInterval> | null = null;
+let initTimeout: ReturnType<typeof setTimeout> | null = null;
+
 declare global {
   interface Window {
     puter: {
@@ -242,23 +246,45 @@ export const usePuterStore = create<PuterStore>((set, get) => {
   };
 
   const init = (): void => {
+    if (isInitialized) {
+      return;
+    }
+
+    isInitialized = true;
+
     const puter = getPuter();
+
     if (puter) {
       set({ puterReady: true });
       checkAuthStatus();
       return;
     }
 
-    const interval = setInterval(() => {
-      if (getPuter()) {
-        clearInterval(interval);
+    initInterval = setInterval(() => {
+      const puter = getPuter();
+
+      if (puter) {
+        if (initInterval) {
+          clearInterval(initInterval);
+          initInterval = null;
+        }
+
+        if (initTimeout) {
+          clearTimeout(initTimeout);
+          initTimeout = null;
+        }
+
         set({ puterReady: true });
         checkAuthStatus();
       }
     }, 100);
 
-    setTimeout(() => {
-      clearInterval(interval);
+    initTimeout = setTimeout(() => {
+      if (initInterval) {
+        clearInterval(initInterval);
+        initInterval = null;
+      }
+
       if (!getPuter()) {
         setError("Puter.js failed to load within 10 seconds");
       }
