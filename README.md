@@ -4,7 +4,6 @@ An **AI-powered Resume Analyzer** that helps users analyze their resumes, identi
 
 The application provides an easy way to upload a resume and get AI-based insights about resume quality, skills, content, and overall job readiness.
 
----
 
 ## 🚀 Features
 
@@ -30,16 +29,6 @@ The application provides an easy way to upload a resume and get AI-based insight
 * **AI Integration**
 * **Vite**
 
----
-
-## 📸 Screenshots
-
-Add screenshots of your project here.
-
-```md
-![Home Page](./screenshots/home.png)
-![Resume Analysis](./screenshots/resume-analysis.png)
-```
 
 ---
 
@@ -48,7 +37,7 @@ Add screenshots of your project here.
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/Sudhanshudholya/ai-resume-analyzer.git
+git clone https://github.com/Sudhanshudholya/AI-Resume-Analyzer
 ```
 
 ### 2. Go to the project directory
@@ -84,7 +73,7 @@ The application will run on your local development server.
 ## 📂 Project Structure
 
 ```text
-ai-resume-analyzer/
+AI-Resume-Analyzer/
 │
 ├── app/
 ├── components/
@@ -160,6 +149,10 @@ If you would like to contribute:
 Full Stack / MERN Stack Developer
 
 ---
+
+## * Live Demo 
+
+https://sd-ai-resume-analyzer-r6167.puter.site/
 
 ## ⭐ Support
 
