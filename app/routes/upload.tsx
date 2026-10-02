@@ -8,7 +8,7 @@ import { generateUUID } from "~/lib/utils";
 import { prepareInstructions } from "~/constants";
 
 const Upload = () => {
-  const { auth, isLoading, fs, ai, kv } = usePuterStore();
+  const { fs, ai, kv } = usePuterStore();
 
   const navigate = useNavigate();
 
@@ -31,91 +31,197 @@ const Upload = () => {
     jobDescription: string;
     file: File;
   }) => {
-    setIsProcessing(true);
-    setStatusText("Uploading the file ...");
-    const uploadedFile = await fs.upload([file]);
+    if (isProcessing) return;
 
-    if (!uploadedFile) return setStatusText("Error: Failed to upload");
+    try {
+      setIsProcessing(true);
 
-    setStatusText("Converting to image ...");
+      // 1. Upload PDF
+      setStatusText("Uploading the file...");
 
-    const imageFile = await convertPdfToImage(file);
+      const uploadedFile = await fs.upload([file]);
 
-    if (!imageFile.file)
-      return setStatusText("Error: Failed to convert PDF To image");
+      if (!uploadedFile) {
+        throw new Error("Failed to upload PDF");
+      }
 
-    setStatusText("Uploading the image...");
+      // 2. Convert PDF to image
+      setStatusText("Converting to image...");
 
-    const uploadedImage = await fs.upload([imageFile.file]);
+      const imageFile = await convertPdfToImage(file);
 
-    if (!uploadedImage) return setStatusText("Error: Failed to upload");
+      if (!imageFile.file) {
+        throw new Error(imageFile.error || "Failed to convert PDF to image");
+      }
 
-    setStatusText("Preparing data ...");
+      // 3. Upload image
+      setStatusText("Uploading the image...");
 
-    const uuid = generateUUID();
+      const uploadedImage = await fs.upload([imageFile.file]);
 
-    const data = {
-      id: uuid,
-      resumePath: uploadedFile.path,
-      imagePath: uploadedImage.path,
-      companyName,
-      jobTitle,
-      jobDescription,
-      feedback: "",
-    };
-    await kv.set(`resume:${uuid}`, JSON.stringify(data));
+      if (!uploadedImage) {
+        throw new Error("Failed to upload image");
+      }
 
-    setStatusText("Analyzing...");
+      // 4. Generate ID
+      const uuid = generateUUID();
 
-    const feedback = await ai.feedback(
-      uploadedFile.path,
-      prepareInstructions({ jobTitle, jobDescription }),
-    );
+      // 5. Save initial resume data
+      setStatusText("Preparing data...");
 
-    if (!feedback) return setStatusText("Error: failed to analyz resume");
+      const data = {
+        id: uuid,
+        resumePath: uploadedFile.path,
+        imagePath: uploadedImage.path,
+        companyName,
+        jobTitle,
+        jobDescription,
+        feedback: null,
+      };
 
-    const feedbackText =
-      typeof feedback.message.content === "string"
-        ? feedback.message.content
-        : feedback.message.content[0].text;
+      await kv.set(`resume:${uuid}`, JSON.stringify(data));
 
-    data.feedback = JSON.parse(feedbackText);
+      // 6. AI analysis
+      setStatusText("Analyzing your resume...");
 
-    await kv.set(`resume: ${uuid}`, JSON.stringify(data));
+      let feedback = null;
 
-    setStatusText("Analysis complete, redirecting...");
+      // Retry if Puter returns too_many_requests
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          feedback = await ai.feedback(
+            uploadedFile.path,
+            prepareInstructions({
+              jobTitle,
+              jobDescription,
+            }),
+          );
 
-    // console.log(data);
+          if (feedback) break;
+        } catch (error: any) {
+          console.error(`AI attempt ${attempt} failed:`, error);
+
+          const isTooManyRequests =
+            error?.code === "too_many_requests" ||
+            error?.error === "Too many concurrent requests.";
+
+          if (!isTooManyRequests || attempt === 3) {
+            throw error;
+          }
+
+          setStatusText(`AI is busy. Retrying... (${attempt}/3)`);
+
+          await new Promise((resolve) => setTimeout(resolve, attempt * 3000));
+        }
+      }
+
+      if (!feedback) {
+        throw new Error("Failed to generate AI feedback");
+      }
+
+      // 7. Extract AI response
+      const feedbackText =
+        typeof feedback.message.content === "string"
+          ? feedback.message.content
+          : feedback.message.content?.[0]?.text;
+
+      if (!feedbackText) {
+        throw new Error("AI returned an empty response");
+      }
+
+      console.log("AI Feedback:", feedbackText);
+
+      // 8. Parse JSON
+      let parsedFeedback;
+
+      try {
+        parsedFeedback = JSON.parse(feedbackText);
+      } catch (error) {
+        console.error("Invalid AI JSON:", feedbackText);
+        throw new Error("AI returned invalid feedback format");
+      }
+
+      if (
+        typeof parsedFeedback.overallScore !== "number" ||
+        typeof parsedFeedback.ATS?.score !== "number" ||
+        typeof parsedFeedback.toneAndStyle?.score !== "number" ||
+        typeof parsedFeedback.content?.score !== "number" ||
+        typeof parsedFeedback.structure?.score !== "number" ||
+        typeof parsedFeedback.skills?.score !== "number"
+      ) {
+        console.error("Invalid AI feedback:", parsedFeedback);
+        throw new Error("AI returned incomplete feedback data");
+      }
+
+      // 9. Add feedback to data
+      data.feedback = parsedFeedback;
+
+      // 10. IMPORTANT: same KV key
+      await kv.set(`resume:${uuid}`, JSON.stringify(data));
+
+      // 11. Navigate to resume review
+      setStatusText("Analysis complete, redirecting...");
+
+      navigate(`/resume/${uuid}`);
+    } catch (error: any) {
+      console.error("Resume analysis failed:", error);
+
+      setStatusText(
+        error?.message || "Something went wrong while analyzing the resume.",
+      );
+
+      setIsProcessing(false);
+    }
   };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const form = e.currentTarget.closest("form");
+    if (isProcessing) return;
 
-    if (!form) return;
-
+    const form = e.currentTarget;
     const formData = new FormData(form);
 
     const companyName = formData.get("company-name");
     const jobTitle = formData.get("job-title");
     const jobDescription = formData.get("job-description");
 
-    if (!file) return;
+    if (
+      typeof companyName !== "string" ||
+      typeof jobTitle !== "string" ||
+      typeof jobDescription !== "string"
+    ) {
+      setStatusText("Please fill all the fields.");
+      return;
+    }
 
-    handleAnalyze({ companyName, jobTitle, jobDescription, file });
+    if (!file) {
+      setStatusText("Please upload your resume.");
+      return;
+    }
+
+    handleAnalyze({
+      companyName,
+      jobTitle,
+      jobDescription,
+      file,
+    });
   };
+
   return (
-    <main className={"bg-[url('/images/bg-main.svg')] bg-cover"}>
+    <main className="bg-[url('/images/bg-main.svg')] bg-cover">
       <Navbar />
-      <section className={"main-section"}>
-        <div className={"page-heading py-16"}>
+
+      <section className="main-section">
+        <div className="page-heading py-16">
           <h1>Smart feedback for your dream job</h1>
+
           {isProcessing ? (
             <>
               <h2>{statusText}</h2>
+
               <img
-                src={"/images/resume-scan.gif"}
+                src="/images/resume-scan.gif"
                 alt="Scanning resume"
                 className="w-[350px] max-sm:w-[280px] mx-auto"
               />
@@ -126,48 +232,55 @@ const Upload = () => {
 
           {!isProcessing && (
             <form
-              id={"upload-form"}
+              id="upload-form"
               onSubmit={handleSubmit}
-              className={"flex flex-col gap-4 mt-8"}
+              className="flex flex-col gap-4 mt-8"
             >
-              <div className={"form-div"}>
-                <label htmlFor={"company-name"}>Company name</label>
+              <div className="form-div">
+                <label htmlFor="company-name">Company name</label>
+
                 <input
-                  type={"text"}
-                  name={"company-name"}
-                  placeholder={"Company Name"}
-                  id={"company-name"}
+                  type="text"
+                  name="company-name"
+                  placeholder="Company Name"
+                  id="company-name"
                 />
               </div>
 
-              <div className={"form-div"}>
-                <label htmlFor={"job-title"}>Job Title</label>
+              <div className="form-div">
+                <label htmlFor="job-title">Job Title</label>
+
                 <input
-                  type={"text"}
-                  name={"job-title"}
-                  placeholder={"Job Title"}
-                  id={"job-title"}
+                  type="text"
+                  name="job-title"
+                  placeholder="Job Title"
+                  id="job-title"
                 />
               </div>
 
-              <div className={"form-div"}>
-                <label htmlFor={"job-description"}>Job Description</label>
+              <div className="form-div">
+                <label htmlFor="job-description">Job Description</label>
+
                 <textarea
                   rows={5}
-                  name={"job-description"}
-                  placeholder={"Job Description"}
-                  id={"job-description"}
+                  name="job-description"
+                  placeholder="Job Description"
+                  id="job-description"
                 />
               </div>
 
-              <div className={"form-div"}>
-                <label htmlFor={"uploader"}>Upload Resume</label>
-                {/*<div>Uploader</div>*/}
+              <div className="form-div">
+                <label htmlFor="uploader">Upload Resume</label>
+
                 <FileUploader onFileSelect={handleFileSelect} />
               </div>
 
-              <button className={"primary-button"} type={"submit"}>
-                Analyze Resume
+              <button
+                className="primary-button"
+                type="submit"
+                disabled={isProcessing}
+              >
+                {isProcessing ? "Analyzing..." : "Analyze Resume"}
               </button>
             </form>
           )}
